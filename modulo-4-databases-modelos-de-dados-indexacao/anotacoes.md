@@ -120,9 +120,9 @@ Exemplos:
 
 Banco de dados é a engine intermediária entre a engine e o dado. Os dados precisam estar estruturados e armazenados de alguma forma, para que possa ser acessado e alterado de alguma forma.
 
-### Raw Oriented
+### Row Oriented
 
-O raw oriented, é um modelo de tupla. Tupla indica linha e coluna (ou linha e atributo). São dados que ficam armazenados dentro de uma única linha no banco de dados, o que indica também que essa linha está escrita em um bloco dentro do disco, o que melhora a performance no momento de consulta.
+O row oriented, é um modelo de tupla. Tupla indica linha e coluna (ou linha e atributo). São dados que ficam armazenados dentro de uma única linha no banco de dados, o que indica também que essa linha está escrita em um bloco dentro do disco, o que melhora a performance no momento de consulta.
 
 O modelo de linha também indica que leitura, escrita, update, deleção acontecem inteiramente numa linha.
 
@@ -198,4 +198,139 @@ Exemplos:
 
 ---
 
-### Wide-Column
+### Wide-Column (Coluna Larga)
+
+É um banco de dados que possui o armazenamento por linhas, no entanto, cada linha pode ter o seu conjunto de colunas, como se fossem famílias de colunas. Então pense numa tabela de usuários. Cada usuário tem id, nome, email e atributos. Os atributos representam uma família de colunas, dentro da família atributos, eu posso ter role, cor favorita, comida favorita. Eu posso ter o atributo personal_info, que é a família para as colunas email, telefone, endereço.
+
+Quando uma consulta explícita via query é feita, dependendo do atributo que você utilize como filtro, o banco buscará somente as linhas/registros que contém aqueles atributos.
+
+Casos de uso:
+- Data Lakes
+- Séries Temporais
+
+Os dados são armazenados por família de colunas no disco, o que faz com que a consulta seja mais performática em termos de consultarmos dados de uma mesma família.
+
+São muito pensando para databases distribuídos, com consistência eventual, mas pode executar transações atômicas e joins quando configurados. Esses tipos de bancos de dados podem ter até milhares de nós distribuídos, com dependência grande de sharding e replicação de dados.
+
+#### Exemplo: Tabela de Usuários em Wide-Column
+
+| Row Key | Column Family | Column | Value |
+|---|---|---|---|
+| user_001 | personal_info | name | Alice Silva |
+| user_001 | personal_info | email | alice@example.com |
+| user_001 | personal_info | age | 28 |
+| user_001 | contact_info | phone | +55 11 98765-4321 |
+| user_001 | contact_info | city | São Paulo |
+| user_002 | personal_info | name | Bob Santos |
+| user_002 | personal_info | email | bob@example.com |
+| user_002 | personal_info | age | 35 |
+| user_002 | contact_info | phone | +55 21 99876-5432 |
+| user_002 | contact_info | city | Rio de Janeiro |
+| user_003 | personal_info | name | Carol Lima |
+| user_003 | personal_info | email | carol@example.com |
+| user_003 | personal_info | age | 42 |
+| user_003 | contact_info | phone | +55 85 97654-3210 |
+| user_003 | contact_info | city | Fortaleza |
+
+Exemplos de bancos:
+- CassandraDB
+- ScyllaDB
+- DynamoDB
+- CosmosDB
+
+### Key Value (Chave-Valor)
+
+Tipo mais simples de bancos de dados NoSQL que podemos encontrar. Tem schema fraco e recebe um identificador, que é a chave e um valor, que pode ser basicamente qualquer coisa. Eu poderia ter algo assim:
+
+#### Exemplo: Armazenamento Key-Value de Usuários
+
+| Key | Value |
+|---|---|
+| user_001 | `{"name": "Alice Silva", "email": "alice@example.com", "age": 28}` |
+| user_002 | `{"name": "Bob Santos", "email": "bob@example.com", "age": 35}` |
+| user_003 | `{"name": "Carol Lima", "email": "carol@example.com", "age": 42}` |
+| session_abc123 | `{"user_id": "user_001", "login_time": "2026-05-31T10:30:00Z"}` |
+| cache_produto_456 | `{"id": 456, "name": "Notebook", "price": 3500}` |
+
+### Grafos
+
+São bancos de dados que armazenam dados que contém relação entre propriedades. É um banco de dados composto por vértices e arestas, sendo que um vértice pode estar ligado a outro vértice através de uma aresta.
+
+Alguns casos de uso:
+1. Quando você recebe indicações de amizades em redes sociais, elas podem estar sendo providas de bancos de dados de grafos. Isso acontece por que Maria tem amizade com João e você tem amizade com Maria, logo, eventualmente João pode ser seu amigo
+2. Em aplicativos de localização. Quando você usa Waze ou Google Maps, ele traçará a rota baseado em grafos, que eventualmente trará a menor rota, baseado em relações (trânsito, distância, etc)
+
+#### Exemplo: Rede Social com Grafos
+
+```
+Vértices (Usuários):
+- Alice
+- Bob
+- Carol
+- David
+
+Arestas (Amizades):
+- Alice --- Bob
+- Alice --- Carol
+- Bob --- Carol
+- Carol --- David
+```
+
+| Usuário | Amigos | Distância |
+|---|---|---|
+| Alice | Bob, Carol | - |
+| Bob | Alice, Carol | - |
+| Carol | Alice, Bob, David | - |
+| David | Carol | - |
+
+**Possíveis Recomendações:**
+- Alice pode ser amiga de David (através de Carol)
+- Bob pode ser amigo de David (através de Carol)
+
+Exemplos de bancos:
+- Neo4j
+- Amazon Neptune
+- ArangoDB
+- JanusGraph
+
+Artigo para relembrar o que é grafo: https://medium.com/@gtbarbosa/estruturas-de-dados-al%C3%A9m-do-b%C3%A1sico-tabelas-hash-grafos-e-pesquisa-em-largura-044a6928acb6
+
+---
+
+## Armazenamento e Indexação
+
+Formas de armazenar e indexar os dados de um banco de dados. Isso terá impacto direto em desempenho e flexibilidade, pensando que eles são o coração do desempenho de queries.
+
+### Page Size
+
+Armazenamento em page size indica que os dados podem ser armazenados por similaridade em páginas em blocos fixos. Isso é configurado quando criamos a engine do banco de dados
+
+Os blocos são as páginas e orientados a linhas (bancos SQL ou row oriented). Suportam alguns NoSQL, mas está mais próximo de bancos SQL.
+
+As páginas contém metadados que indexam e ajudam na busca dos dados dentro das páginas.
+
+Um exemplo é se eu definir um page size de 8 KB, indexados por data, sempre que eu armazenar estes dados, eu vou abrir e armazenar esses dados nesta página até completar 8 KB e ai então vou par aa próxima página.
+
+Páginas grandes, tendem a diminuir I/O para fazer leitura de grandes volumes de dados. Por exemplo, imagina que temos uma páginade 10 MB e que armazena pedidos por datas. Em uma consulta, se eu quiser trazer todos os pedidos do mês de janeiro, eles estarão próximos ou em uma única página. O que evita que minha engine tenha que ficar indo e voltando e abrindo diversas páginas, ou seja, diminui I/O. Por outro lado, a quantidade de dados retornados, será maior, o que aumenta o custo de transferência de dados. Por outro lado, para consultas simples, será ruim, por que eu tenho que abrir uma página muito grande, para pegar um único registro. Prefira páginas grandes quando for querer buscar extensas listas de dados. Prefira páginas pequenas, quando quiser poucos ou um único dado.
+
+Páginas menores, minimizam a leitura de dados irrelevantes e consegue fazer consultas pequenas otimizadas. Temos mais I/O, mas o custo com transferência de dados é menor.
+
+Exemplos de bancos de dados:
+- RDBMS's Padrão
+- Postgree
+- MySQL/InnoDB
+- Oracle Databases
+- Apache Cassandra
+
+### Indexação Colunar
+
+Funciona indexando dados por colunas, o que permite que os bancos colunares existam. Existe uma compressão de dados por similaridade na coluna, o que permite que consultas analíticas por um determinado valor sejam otimizadas. Por exemplo, se eu tenho a coluna `país` e 80% dos registros dessa coluna é Brasil. A indexação colunar vai comprimir este dado e fazer uma referência ao total dele, ao invés de tê-lo todo. Isso otimizaria uma consulta de clientes por país, por exemplo.
+
+Comparando com o page size, que uma página é fechada depois de um terminado tamanho de linhas armazenadas numa página, a indexação colunar os dados de uma mesma coluna ficam numa mesma págian e são comprimidos por similaridade.
+
+Exemplos de bancos de dados:
+- Amazon Redshift
+- BigQuery
+- Snowflake
+- DuckDB
+
