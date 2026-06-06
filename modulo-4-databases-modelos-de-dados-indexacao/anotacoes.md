@@ -334,3 +334,62 @@ Exemplos de bancos de dados:
 - Snowflake
 - DuckDB
 
+### LSM-Trees (Log-Structured Merge-Tree)
+
+Fluxo orientado para ingestão muito alta de dados. Recebe um fluxo massivo de dados, retorna ao client um ACK como forma de confirmação de que recebeu o dado e o processa de forma assíncrona.
+
+Para processar o dado, num primeiro momento esses dados são colocados em RAM (são as memtable) e depois são jogados para o disco (SSTables).
+
+Trabalha com consistência eventual. São bancos de dados append-only, ou seja, ele não tem update in place, ele adiciona novos dados e tem um mecanismo de substituição do dado caso sejam a mesma referência.
+
+Exemplos:
+- Cassandra
+- ScyllaDB
+- Apache HBase
+- InfluxDB
+- Victoria Metrics
+- Apache Lucene
+- Elasticsearch
+
+### Indexação B-Tree (Árvores B)
+
+Funciona como indexação de dados ordenados em blocos. Por exemplo, se eu tenho uma tabela de usuários indexada por ID, eu posso criar page sizes destes dados ordenados por id.
+
+Então eu poderia ter do usuário 1 ao 10 no bloco 1, do 11 ao 20 no bloco 2, do 21 ao 30 no bloco 3. Se eu quiser consultar o usuário de id 16, ao invés de percorrer os 16 usuários para chegar no usuário que quero, vou primeiro fazer a seguinte pergunta:
+
+- O usuário está no bloco 1? -> neste caso não, pq o bloco 1 termina no id 10
+- O usuário está no bloco 2? -> neste caso sim, por que o bloco 2 termina no id 20
+
+Isso pode acontecer em maiores escalas e também pode fazer sub-blocos. Então eu poderia ter um sub-bloco do bloco 2, que indexaria em um page size de 2 em 2.
+
+Então a ideia aqui da árvore é ir fazendo essa busca mais performática. Diminui operações de I/O para buscas em range.
+
+### Indexação por Hashing
+
+Permite busca direta pela chave do item salvo em um banco de dados. Otimiza a busca direta, quando sabemos exatamten onde o dado está, de forma direta e rápida.
+
+**Função Hash**: É a forma de converter uma chave em um endereço numérico único e deterministíco. Sempre que eu buscar através de uma função hash a chave "gustavo", o valor retornado será 10, independente da quantidade de vezes que eu buscar por essa chave. Ao retornar a chave numérica, o banco sabe exatamente onde este dado está.
+
+Eu também posso usar o hash para identificar em qual gaveta está o meu dado. Eu tenho bloco de dados (hash table), eu servem para encadear dados, que me levam a um bucket de dados.
+
+É mais voltado para buscas pontuais.
+
+Exemplos:
+- Postgree (indice hash)
+- MySQL (memory engine)
+- Oracle (hash clsuter)
+- Redis
+- Memcached
+- Valkey
+
+### Índices Invertidos
+
+São estratégias de indexação de termos/tokens dentro de bancos de dados distribuídos. Permite buscar termos que estejam presentes em vários itens dentro de um banco.
+
+Pense por exemplo num catálogo de produtos que tenha nome e descrição. Neste catálogo eu quero buscar por monitor. Monitor é uma palavra reservada, que pode estar no nome do produto e também na descrição, mas não me trará nada com exatidão. Esse tipo de indexação permite trazer vários itens que contém "monitor" no nome ou descrição. Funciona como uma busca por similaridade.
+
+Exemplos:
+- Elasticsearch
+- Apache Lucene
+- MongoDB
+
