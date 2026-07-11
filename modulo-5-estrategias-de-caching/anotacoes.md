@@ -18,7 +18,7 @@ Dado a fraca consistência do dado, precisamos ter estratégias de invalidação
 
 É fortemente ligado ao padrão BASE. Sendo soft state.
 
-Isso indica que eu consigo definir um momento para o item do cache ser enválido, sozinho. Isso é a capacidade do banco de dados em memória se mudar sozinha.
+Isso indica que eu consigo definir um momento para o item do cache ser inválido, sozinho. Isso é a capacidade do banco de dados em memória se mudar sozinha.
 
 ---
 
