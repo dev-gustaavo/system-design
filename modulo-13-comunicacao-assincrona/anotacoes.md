@@ -107,6 +107,34 @@ O Batch Size mantém mensagens em memória, portanto, há risco de perda de mens
 
 #### Consumer
 
-Responsável por consumir eventos uma ou mais partições de tópicos Kafka. Consumidores não compartilham partições, são sempre 1 para 1 (1 consumer para 1 partição). Imagine um tópico Kafka com 04 partições. Se eu tenho dois consumidores, serão 02 partições para cada consumidor.
+Responsável por consumir eventos uma ou mais partições de tópicos Kafka. Consumidores não compartilham partições, são sempre 1 para 1 (1 partição para 1 consumer). Imagine um tópico Kafka com 04 partições. Se eu tenho dois consumidores, serão 02 partições para cada consumidor.
 
-Podemos permitir leitura do mesmo dado por consumidores com propósitos diferentes
+Eu posso ter consumer groups, que agruparão consumidores. Cada consumer group pode consumir todas as partições, mas o número de consumidores dentro do consumer group nunca pode exceder o número de partições. Por exemplo, se eu tenho um consumer group com 05 consumidores e um broker com 04 partições, um consumidor ficará sem consumir nada. Isso é um problema de escalabilidade horizontal em consumidores Kafkas.
+
+Resumo: Consumers Groups podem consumir todas as partições. Consumers podem consumir apenas uma partição.
+
+Consumer Groups são identificados nominalmente.
+
+![alt text](image.png)
+
+O Kafka possui um algoritmo de rebalanceamento. Sempre que um consumer entra ou sai, as mensagens param de ser lidas por um certo momento, até que o Kafka faça o rebalanceamento, conectando as partições para os consumidores.
+
+Uma dúvida que fiquei durante a aula foi se existia um mecanismo de auto-scaling das partições e não existe. O número de partições pode crescer, mas exige uma ação manual. Adicionar uma nova partição ou um novo consumer exige que o Kafka faça o rebalance. Todo rebalance é perigoso e não só pela pausa da leitura, mas também por que cada Consumer, precisa fazer o commit da leitura da mensagem que está sendo processada (isso indica sinalizar ao tópico que a mensagem foi lida e que ela não precisa mais ser processada, podendo sair da fila). Caso no rebalance, a Partição 1 que antes era processada pelo Consumer 1, passa a ser processada pelo Consumer 2 sem que o Consumer 1 tenha feito o commit, corremos o risco de processar a mesma mensagem duas vezes (importância da idempotência).
+
+Isso pode acontecer de diversas maneiras, não só adicionando uma nova partição. Pode ser que um consumer caia. Isso também exigirá um rebalance. Trabalhar com escalabilidade em Kafka pode ser uma dor grande.
+
+#### Cluster e Broker
+
+Um cluster de Kafka é composto por vários servidores, que são os Nós (nodes) que são denominados Brokers. Eles são os responsáveis por receberem as mensagens e distribuir aos consumidores. Os brokers possuem replicação entre si, configurados pelo Replication Factory, para que se caso algum broker caia, outro broker tenha a mensagem para distribuição aos consumidores.
+
+#### Tópicos
+
+Um tópico representa um domínio claro de recebimento de mensagens. O tópico é onde são agrupadas as partições e as partições é o que permite o paralelismo de mensagens dentro de um tópico. A nomenclatura de um tópico precisa ser clara e representar bem o domínio das mensagens que serão processadas, a fim de que consumidores saibam o que podem consumir daquele tópico.
+
+#### Partições
+
+Partições estão dentro de tópicos e é o que permite o paralelismo de consumo de eventos. Os eventos são publicados em todas as partições, o que é análogo ao balanceamento de carga.
+
+#### Fator de Replicação
+
+Dentro de um broker existe um tópico, que é composto por 1 ou mais partições. Para cada grupo de partições existe um líder, que será responsável pela replicação dos eventos em todos os demais brokers. Isso garante que o mesmo evento seja distribuído entre todos os servidores (brokers) e que caso um broker caia, o evento ainda seja processado. Isso é configurado no Replication Factory.
