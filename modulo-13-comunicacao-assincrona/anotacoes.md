@@ -138,3 +138,52 @@ Partições estão dentro de tópicos e é o que permite o paralelismo de consum
 #### Fator de Replicação
 
 Dentro de um broker existe um tópico, que é composto por 1 ou mais partições. Para cada grupo de partições existe um líder, que será responsável pela replicação dos eventos em todos os demais brokers. Isso garante que o mesmo evento seja distribuído entre todos os servidores (brokers) e que caso um broker caia, o evento ainda seja processado. Isso é configurado no Replication Factory.
+
+## MQTT
+
+Message Queuing Telemetry Transport. Protocolo de mensageria que foi construído para ser leve. É bastante voltado para situações de IOT, comunicação entre dispositivos permitindo hardwares e gadgets em filas para ser consumido por clientes. Voltado para eficiência e dispositivos pequenos, que podemos construir com arduído, por exemplo.
+
+Protocolo que trabalha no over TCP, ou seja precisa esbelecer conexão entre cliente e servidor, garantia de entrega de pacotes, em ordem, sem duplicidade e tudo que o protocolo TCP oferece.
+
+### Default Subscription
+
+Modelo de publicação e assinatura que indica que uma única mensagem será entregue para N consumidores, independente de quais sejam os consumidores (pode ser uma aplicação ou até mesmo um outro gadget) e as mensagens.
+
+### Shared Subscription
+
+O Shared Subscription serve para processamento de mensagens em larga escala. Neste cenário o broker de mensagem será assinado por um único gadget ou aplicação, que pode ter N réplicas. O Shared Subscription garante que as mensagens sejam particionadas e entregue uma por consumidor, sem que haja sobrecarga em um único.
+
+## AMQP
+
+Advanced Message Queuing Protocol. Ele é projeto para integrar aplicações complexas. Ele é mais robusto do que o protocolo MQTT, permitindo entrega de mensagens criptografadas, retentativas, mensagens duráveis. É este protocolo que suporta o RabbitMQ, por exemplo. Neste protocolo AMQP é utilizado o protocolo TCP.
+
+Conseguimos fazer enfileiramento, flexibilidade de entradas, regras de roteamento específicas e tem gamas mais complexas de conceitos.
+
+- Exchanges: serve como um direcionador. Ele recebe a mensagem, trata e envia para quem de direito. Ele antecede a fila em si. É a forma mais comum de uso do protocolo. Armazena configurações de roteamento das mensagens, baseado em metadados enviados ao exchange
+- Brokers: É onde moram as filas
+- Channels: 
+- Queues: 
+- Producers: são os produtores das mensagens
+- Consumers: são os consumidores das mensagens
+- Binding Keys: representa o nome de uma fila
+
+Tipos de exchange:
+
+### Direct Exchange
+
+É o padrão, se não for especificado, essa é quem será utilizado. Ele representa uma conexão de peer to peer. O publicador da mensagem especificará o binding key, para que o exchange saiba para qual fila enviar a mensagem.
+
+### Topic Exchange
+
+Fornece uma gama maior de flexibilidade de roteamento. Conseguimos direcionar para filas específicas a depender do binding key configurado, fazendo uso de caracteres coringas (* ou #), por exemplo.
+
+Se eu tenho 03 filas: (1) faturamento; (2) faturamento_prioritario; e (3) faturamento_datalake, eu posso configurar 03 binding keys: (1) faturamento.prioridade.default; (2) faturamento.prioridade.alta; e (3) faturamento.*
+
+As mensagens podem ser entregues da seguinte forma:
+1. Binding Key: faturamento.prioridade.default, sempre entregará na fila faturamento
+2. Binding Key: faturamento.prioridade.alta, sempre entregará na fila faturamento_prioritario
+3. Binding Key: faturamento.*, receberá todas as mensagens, seja ela o faturamento default ou prioritário
+
+### Fanout Exchange
+
+O Fanout exchange ele é o caso onde publicamos em um único exchange e sem regras de roteamento, ele é entregue para várias filas, sem binding keys específicas.
