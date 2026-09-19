@@ -83,3 +83,30 @@ Imagine um sistema de vendas. Quando o vendedor registra esta compra, que é do 
 
 ## Protocolos de Mensageria
 
+### Kafka, Streaming e Eventos
+
+Kafka é uma plataforma de streaming, projetada intencionalmente para lidar com alto volume de dados, permitindo performance na produção e consumo de dados.
+
+O Kafka é baseado em produção e consumo.
+
+#### Producer
+
+Responsável por publicar eventos em tópicos Kafka. Podem ou não especificar qual partição o evento será publicado. Caso não seja especificado, o próprio Kafka se encarregará de fazer essa distribuição.
+
+Chave de partição é importante quando queremos garantir que um consumidor obtenha sempre os dados de um produtor, dando experiência de continuidade e ordem. Isso pode acarretar um problema que chamamos de Hot Partition, onde o produtor envia um volume muito grande de dados para um único consumidor.
+
+Usar chave de partição pode ser importante quando eu preciso garantir ordenação no consumo dos eventos e não permitir que eventos sejam consumidos fora de ordem.
+
+Replication Factory, o producer pode querer aguardar um ACK do broker de eventos. Ou seja, eu faço a produção e aguardo o broker sinalizar que recebeu o evento. Quanto maior o número de ACK, maior a confiabilidade da entrega do dado. Podemos não querer receber a confirmação de recebimento em determinados cenários, por exemplo: se eu quiser contar a quantidade de clicks em um botão em uma página, tudo bem se eu perder uma quantidade de eventos. Agora se eu estiver falando de eventos de transações bancárias, é necessário que eu receba todos os eventos, exigindo um número de ACK maior.
+
+Outra forma de escrita em tópicos Kafka é o Batch Size. O Batch Size ele permite o acumulo de mensagens para posterior envio ao tópico, podemos parametrizar por exemplo o acumulo de 1000 mensagens para que então façamos a publicação no tópico.
+
+Junto com o Batch Size podemos trabalhar também com o Linger Time. O Linger Time é o tempo parametrizado para envio das mensagens ao tópico sem que o Batch Size tenha chego no limite, bastante importante para não atrasarmos o envio de mensagens. Por exemplo, imagine um Batch Size de 1000, o Linger Time pode ser configurado para 1 minuto. Isso indica que, se em 1 minuto não tivermos chego em 1000 mensagens, elas serão enviadas na quantidade acumulada até o momento.
+
+O Batch Size mantém mensagens em memória, portanto, há risco de perda de mensagens caso haja alguma intercorrência antes da publicação no tópico.
+
+#### Consumer
+
+Responsável por consumir eventos uma ou mais partições de tópicos Kafka. Consumidores não compartilham partições, são sempre 1 para 1 (1 consumer para 1 partição). Imagine um tópico Kafka com 04 partições. Se eu tenho dois consumidores, serão 02 partições para cada consumidor.
+
+Podemos permitir leitura do mesmo dado por consumidores com propósitos diferentes
